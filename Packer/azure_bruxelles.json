@@ -1,0 +1,51 @@
+{
+  "variables": "./variables.json",
+
+  "builders": [
+    {
+      "type": "azure-arm",
+      "client_id": "{{user `client_id`}}",
+      "client_secret": "{{user `client_secret`}}",
+      "subscription_id": "{{user `subscription_id`}}",
+      "tenant_id": "{{user `tenant_id`}}",
+      "os_type": "Windows",
+      "image_publisher": "MicrosoftWindowsDesktop",
+      "image_offer": "Windows-10",
+      "image_sku": "21H1-pro",
+      "version": "latest",
+      "managed_image_resource_group_name": "{{user `resource_group_name`}}",
+      "managed_image_name": "{{user `image_name`}}",
+      "azure_tags": {
+        "dept": "client bruxelles",
+        "task": "image deployment "
+      },
+      "location": "francecentral",
+      "vm_size": "{{user `vm_size`}}"
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "powershell",
+      "inline": [
+        "Start-Process powershell.exe -Verb RunAs",
+        "Remove-Item -Path 'C:\\Windows\\System32\\Sysprep\\unattend.xml'",
+        "Remove-Item -Path 'C:\\Windows\\System32\\Sysprep\\unattend.xml'",
+        "Remove-Item -Path 'C:\\Windows\\System32\\Sysprep\\Panther\\*.*' -Recurse",
+        "Remove-Item -Path 'C:\\Windows\\Temp\\*' -Recurse",
+        "Remove-Item -Path 'C:\\azureagent' -Recurse -Force",
+        "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\AUOptions' -Value 5",
+        "Clear-EventLog -LogName Application, System, Security",
+        "Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=525133' -OutFile 'C:\\install\\office365.exe'",
+        "Start-Process 'C:\\install\\office365.exe' -ArgumentList '/configure', 'C:\\install\\configuration.xml', '/silent' -NoNewWindow -Wait"
+      ],
+
+      "files": [
+        {
+          "source": "./configuration.xml",
+          "destination": "C:\\install\\configuration.xml"
+        }
+      ]
+    }
+  ]
+}
