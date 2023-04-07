@@ -1,1 +1,0 @@
-Nous utiliserons Terraform pour déployer ad ds 
