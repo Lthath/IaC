@@ -1,0 +1,82 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+pool:
+  name: default
+
+variables:
+  backendstrgrg: "maleo"
+  backendstrg: "testmaquette"
+  backendctn: "tfstate"
+  backendstrgkey: "prod.terraform.tfstate"
+
+stages:
+  - stage: tfverification
+    jobs:
+      - job: verification
+        continueOnError: false
+        steps:
+          - task: TerraformInstaller@1
+            displayName: tfinstall
+            inputs:
+              terraformVersion: 'latest'           
+          - task: TerraformTaskV4@4
+            displayName: init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              backendServiceArm: 'MaquetteServiceConnection'
+              backendAzureRmResourceGroupName: '$(backendstrgrg)'
+              backendAzureRmStorageAccountName: '$(backendstrg)'
+              backendAzureRmContainerName: '$(backendctn)'
+              backendAzureRmKey: '$(backendstrgkey)'
+
+          - task: CmdLine@2
+            displayName: "Import existing resource group"
+            inputs:
+              script: terraform import azurerm_resource_group.maleo-rg /subscriptions/b49572b1-1c76-48cb-9c7b-ddcfe09bdb9e/resourceGroups/maleo
+          - task: TerraformTaskV4@4
+            displayName: validate
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+
+  - stage: tfdeploiement
+    condition: succeeded('tfverification')
+    dependsOn: tfverification
+    jobs:
+      - job: deploiement
+        steps:
+          - task: TerraformInstaller@1
+            displayName: tfinstall
+            inputs:
+              terraformVersion: 'latest'
+
+          - task: TerraformTaskV4@4
+            displayName: init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              backendServiceArm: 'MaquetteServiceConnection'
+              backendAzureRmResourceGroupName: '$(backendstrgrg)'
+              backendAzureRmStorageAccountName: '$(backendstrg)'
+              backendAzureRmContainerName: '$(backendctn)'
+              backendAzureRmKey: '$(backendstrgkey)'
+
+          - task: TerraformTaskV4@4
+            displayName: plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              environmentServiceNameAzureRM: 'MaquetteServiceConnection'
+
+          - task: TerraformTaskV4@4
+            displayName: apply
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              environmentServiceNameAzureRM: 'MaquetteServiceConnection'
