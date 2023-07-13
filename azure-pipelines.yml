@@ -35,10 +35,6 @@ stages:
               backendAzureRmContainerName: '$(backendctn)'
               backendAzureRmKey: '$(backendstrgkey)'
 
-          - task: CmdLine@2
-            displayName: "Import existing resource group"
-            inputs:
-              script: terraform import azurerm_resource_group.maleo-rg /subscriptions/b49572b1-1c76-48cb-9c7b-ddcfe09bdb9e/resourceGroups/maleo
           - task: TerraformTaskV4@4
             displayName: validate
             inputs:
